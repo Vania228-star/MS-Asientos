@@ -23,10 +23,10 @@ public class Reserva {
     private String usuarioId;
 
     @Column(name= "funcion_id", nullable = false)
-    private String funcionId;
+    private Long funcionId;
 
     @Column(name= "asiento_ids", nullable = false)
-    private Long asientosIds;
+    private String asientosIds;
 
     @Column(name= "fecha_expiracion", nullable = false)
     private LocalDateTime fechaExpiracion;
