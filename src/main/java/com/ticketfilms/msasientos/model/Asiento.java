@@ -20,7 +20,7 @@ public class Asiento {
     @Column(name= "funcion_id", nullable = false)
     private Long funcionId;
 
-    @Column(name= "numero-asiento", nullable = false)
+    @Column(name= "numero_asiento", nullable = false)
     private String numeroAsiento;
 
     @Column(name= "estado", nullable = false)
