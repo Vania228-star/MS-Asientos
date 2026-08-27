@@ -1,4 +1,4 @@
-package com.ticketfilms.msasientos.model.dto;
+package com.ticketfilms.msasientos.dto;
 
 import java.util.List;
 
@@ -9,5 +9,5 @@ public class ReservaRequestDto {
 
     private String usuarioId;
     private Long funcionId;
-    List<Long> asientosIds;
+    List<Long> asientosSolicitados;
 }
