@@ -17,9 +17,11 @@ public class ReservaService {
     
     private final ReservaRepository reservaRepository;
 
-    public Reserva reservaAsientos(String usuarioId, Long funcionId, List<String> asientosSolicitados){
+    public Reserva reservaAsientos(String usuarioId, Long funcionId, List<Long> asientosSolicitados){
 
-        String asientosStr = String.join(",", asientosSolicitados);
+        String asientosStr = asientosSolicitados.stream()
+        .map(String::valueOf)
+        .collect(java.util.stream.Collectors.joining(","));
 
         Reserva reserva = new Reserva();
         reserva.setUsuarioId(usuarioId);
