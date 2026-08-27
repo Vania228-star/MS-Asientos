@@ -50,7 +50,7 @@ public class AsientoController {
         boolean exito = funcion_AsientoService.reservarAsientos(
             request.getUsuarioId(),
             request.getFuncionId(),
-            request.getAsientoSolicitados()
+            request.getAsientosSolicitados()
         );
         if (exito) {
             return ResponseEntity.ok("Asientos reservados temporalmente con éxito");
