@@ -9,5 +9,5 @@ public class ReservaRequestDto {
 
     private String usuarioId;
     private Long funcionId;
-    List<Long> asientosSolicitados;
+    private List<Long> asientoSolicitados;
 }

@@ -10,5 +10,5 @@ import com.ticketfilms.msasientos.model.Asiento;
 @Repository
 public interface AsientoRepository extends JpaRepository<Asiento, Long>{
     
-    List<Asiento> findByFuncionId(Long funcionId);
+    List<Asiento> findBySala_id(Long sala_id);
 }

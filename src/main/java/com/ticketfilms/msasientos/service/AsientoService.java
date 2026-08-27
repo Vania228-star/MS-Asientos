@@ -15,14 +15,7 @@ public class AsientoService {
 
     private final AsientoRepository asientoRepository;
 
-    public List<Asiento> obtenerMapaAsientos(Long funcionId){
-        return asientoRepository.findByFuncionId(funcionId);
-    }
-
-    public Asiento actualizarEstadoAsiento(Long asientoId, String nuevoEstado){
-        Asiento asiento = asientoRepository.findById(asientoId)
-                .orElseThrow(() -> new RuntimeException("Asiento no encontrado con ID: " + asientoId));
-        asiento.setEstado(nuevoEstado);
-        return asientoRepository.save(asiento);
+    public List<Asiento> obtenerAsientosPorSala(Long sala_id){
+        return asientoRepository.findBySala_id(sala_id);
     }
 }

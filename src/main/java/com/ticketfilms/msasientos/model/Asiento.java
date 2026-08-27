@@ -17,12 +17,16 @@ public class Asiento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name= "funcion_id", nullable = false)
-    private Long funcionId;
+    @Column(name= "sala_id", nullable = false)
+    private Long sala_id;
 
-    @Column(name= "numero_asiento", nullable = false)
-    private String numeroAsiento;
+    @Column(name= "fila", nullable = false)
+    private String fila;
 
-    @Column(name= "estado", nullable = false)
-    private String estado;
+    @Column(name= "numero", nullable = false)
+    private Integer numero;
+
+
+    @Column(name= "categoria", nullable = false)
+    private String categoria;
 }
