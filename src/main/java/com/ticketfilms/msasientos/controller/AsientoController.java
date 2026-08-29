@@ -3,6 +3,7 @@ package com.ticketfilms.msasientos.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,6 +44,16 @@ public class AsientoController {
     public ResponseEntity<List<Funcion_Asiento>> obtenerMapaFuncion(@PathVariable Long funcionId){
         List<Funcion_Asiento> mapa = funcion_AsientoService.obtenerMapaFuncion_Asientos(funcionId);
         return ResponseEntity.ok(mapa);
+    }
+
+    @GetMapping("/reserva/{reservaId}")
+    public ResponseEntity<String> consultarReserva(@PathVariable Long reservaId){
+        return ResponseEntity.ok("Estado de la reserva...");
+    }
+
+    @DeleteMapping("/reserva/{reservaId}")
+    public ResponseEntity<Void> liberarReserva(@PathVariable Long reservaId){
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/reserva")
