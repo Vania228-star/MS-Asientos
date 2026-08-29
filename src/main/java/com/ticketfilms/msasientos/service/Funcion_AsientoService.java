@@ -25,7 +25,7 @@ public class Funcion_AsientoService {
         LocalDateTime expiracion = LocalDateTime.now().plusMinutes(5);
 
         for (Long asiento_id : asientosIds){
-            Optional<Funcion_Asiento> optFuncionAsiento = funcion_AsientoRepository.findByFuncion_idAndAsientoId(funcion_id, asiento_id);
+            Optional<Funcion_Asiento> optFuncionAsiento = funcion_AsientoRepository.findByFuncion_idAndAsiento_id(funcion_id, asiento_id);
 
             if(optFuncionAsiento.isPresent()){
                 Funcion_Asiento funcion_Asiento = optFuncionAsiento.get();

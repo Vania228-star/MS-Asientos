@@ -13,7 +13,7 @@ public interface Funcion_AsientoRepository extends JpaRepository<Funcion_Asiento
     
     List<Funcion_Asiento> findByFuncion_id(Long funcion_id);
 
-    Optional<Funcion_Asiento> findByFuncion_idAndAsientoId(Long funcion_id, Long asiento_id);
+    Optional<Funcion_Asiento> findByFuncion_idAndAsiento_id(Long funcion_id, Long asiento_id);
 
     List<Funcion_Asiento> findByUsuario_id(String usuario_id);
 }
