@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.ticketfilms.msasientos.model.Funcion_Asiento;
@@ -11,9 +13,12 @@ import com.ticketfilms.msasientos.model.Funcion_Asiento;
 @Repository
 public interface Funcion_AsientoRepository extends JpaRepository<Funcion_Asiento, Long> {
     
-    List<Funcion_Asiento> findByFuncion_id(Long funcion_id);
+    @Query("SELECT f FROM Funcion_Asiento f WHERE f.funcion_id = :funcionId")
+    List<Funcion_Asiento> findByFuncion_id(@Param("funcionId") Long funcionId);
 
-    Optional<Funcion_Asiento> findByFuncion_idAndAsiento_id(Long funcion_id, Long asiento_id);
+    @Query("SELECT f FROM Funcion_Asiento f WHERE f.funcion_id = :funcionId AND f.asiento_id = :asientoId")
+    Optional<Funcion_Asiento> findByFuncion_idAndAsiento_id(@Param("funcionId") Long funcionId, @Param("asientoId") Long asientoId);
 
-    List<Funcion_Asiento> findByUsuario_id(String usuario_id);
+    @Query("SELECT f FROM Funcion_Asiento f WHERE f.usuario_id = :usuarioId")
+    List<Funcion_Asiento> findByUsuario_id(@Param("usuarioId") String usuarioId);
 }

@@ -1,6 +1,8 @@
 package com.ticketfilms.msasientos.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.ticketfilms.msasientos.model.Sala;
@@ -8,5 +10,6 @@ import com.ticketfilms.msasientos.model.Sala;
 @Repository
 public interface SalaRepository extends JpaRepository< Sala, Long> {
     
-    Sala findBySala_codigo(String sala_codigo);
+    @Query("SELECT s FROM Sala s WHERE s.sala_codigo = :salaCodigo")
+    Sala findBySala_codigo(@Param("salaCodigo") String salaCodigo);
 }
