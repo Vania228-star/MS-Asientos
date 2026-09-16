@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 public class ReservaRequestDto {
 
-    private String usuarioId;
     private Long funcionId;
     private List<Long> asientosSolicitados;
 }
