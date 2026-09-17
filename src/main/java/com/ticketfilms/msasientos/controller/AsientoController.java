@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -74,5 +75,27 @@ public class AsientoController {
         }else{
             return ResponseEntity.badRequest().body("No pudo completarse esta reserva. Algunos asientos ya no se encuentran disponibles");
         }
+    }
+
+    @PutMapping("/confirmar")
+    public ResponseEntity<String> confirmarAsientos(
+            @RequestBody ReservaRequestDto request,
+            @AuthenticationPrincipal Jwt jwt){
+        String usuarioId = jwt.getSubject();
+
+        String resultado = funcion_AsientoService.confirmarAsientos(
+            usuarioId,
+            request.getFuncionId(),
+            request.getAsientosSolicitados()
+        );
+
+        return switch (resultado) {
+            case "OK" -> ResponseEntity.ok("Asientos confirmados con éxito");
+            case "ASIENTO_INEXISTENTE" -> ResponseEntity.badRequest().body("Uno o más asientos no existen para esta función");
+            case "ASIENTO_NO_RESERVADO" -> ResponseEntity.badRequest().body("Uno o más asientos no están reservados");
+            case "RESERVA_DE_OTRO_USUARIO" -> ResponseEntity.status(403).body("La reserva pertenece a otro usuario");
+            case "RESERVA_EXPIRADA" -> ResponseEntity.status(410).body("La reserva expiró, vuelve a seleccionar tus asientos");
+            default -> ResponseEntity.internalServerError().body("Error desconocido");
+        };
     }
 }
