@@ -15,7 +15,7 @@ public class AsientoService {
 
     private final AsientoRepository asientoRepository;
 
-    public List<Asiento> obtenerAsientosPorSala(Long sala_id){
+    public List<Asiento> obtenerAsientosPorSala(Long sala_id) {
         return asientoRepository.findBySalaId(sala_id);
     }
 }

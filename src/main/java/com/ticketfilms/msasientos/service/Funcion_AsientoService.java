@@ -9,9 +9,18 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ticketfilms.msasientos.client.FuncionClient;
+import com.ticketfilms.msasientos.dto.FuncionResponse;
+import com.ticketfilms.msasientos.exception.CarteleraNoDisponibleException;
+import com.ticketfilms.msasientos.exception.FuncionNoEncontradaException;
+import com.ticketfilms.msasientos.model.Asiento;
 import com.ticketfilms.msasientos.model.Funcion_Asiento;
+import com.ticketfilms.msasientos.model.Sala;
+import com.ticketfilms.msasientos.repository.AsientoRepository;
 import com.ticketfilms.msasientos.repository.Funcion_AsientoRepository;
+import com.ticketfilms.msasientos.repository.SalaRepository;
 
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,6 +32,9 @@ public class Funcion_AsientoService {
     private static final String ESTADO_OCUPADO = "OCUPADO";
 
     private final Funcion_AsientoRepository funcion_AsientoRepository;
+    private final AsientoRepository asientoRepository;
+    private final SalaRepository salaRepository;
+    private final FuncionClient funcionClient;
 
     private boolean estaExpirado(Funcion_Asiento fa) {
         return ESTADO_RESERVADO.equals(fa.getEstado())
@@ -32,6 +44,10 @@ public class Funcion_AsientoService {
 
     public List<Funcion_Asiento> obtenerMapaFuncion_Asientos(Long funcion_id){
         List<Funcion_Asiento> asientos = funcion_AsientoRepository.findByFuncion_id(funcion_id);
+
+        if (asientos.isEmpty()) {
+            return generarMapaInicial(funcion_id);
+        }
 
         List<Funcion_Asiento> expirados = asientos.stream()
                 .filter(this::estaExpirado)
@@ -46,6 +62,43 @@ public class Funcion_AsientoService {
         }
 
         return asientos;
+    }
+
+    private Sala resolverSala(String salaValor) {
+        Sala sala = salaRepository.findBySala_codigo(salaValor);
+        if (sala != null) {
+            return sala;
+        }
+        return salaRepository.findByNombre(salaValor)
+                .orElseThrow(() -> new IllegalStateException(
+                "No se encontró Sala para el valor '" + salaValor + "' (ni por código ni por nombre)"));
+    }
+
+    private List<Funcion_Asiento> generarMapaInicial(Long funcion_id) {
+        FuncionResponse funcion;
+        try {
+            funcion = funcionClient.obtenerFuncionPorId(funcion_id);
+        } catch (FeignException.NotFound e) {
+            throw new FuncionNoEncontradaException(funcion_id);
+        } catch (FeignException e) {
+            throw new CarteleraNoDisponibleException(funcion_id, e);
+        }
+
+        Sala sala = resolverSala(funcion.getSala());
+        List<Asiento> asientos = asientoRepository.findBySalaId(sala.getId());
+
+        List<Funcion_Asiento> nuevos = asientos.stream()
+                .map(asiento -> {
+                    Funcion_Asiento fa = new Funcion_Asiento();
+                    fa.setFuncion_id(funcion_id);
+                    fa.setAsiento_id(asiento.getId());
+                    fa.setEstado(ESTADO_DISPONIBLE);
+                    fa.setActualizado_en(LocalDateTime.now());
+                    return fa;
+                })
+                .toList();
+
+        return funcion_AsientoRepository.saveAll(nuevos);
     }
 
     public boolean reservarAsientos(String usuario_id, Long funcion_id, List<Long> asientosIds){
