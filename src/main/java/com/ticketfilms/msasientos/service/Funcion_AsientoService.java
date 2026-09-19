@@ -30,6 +30,7 @@ public class Funcion_AsientoService {
     private static final String ESTADO_DISPONIBLE = "DISPONIBLE";
     private static final String ESTADO_RESERVADO = "RESERVADO";
     private static final String ESTADO_OCUPADO = "OCUPADO";
+    private static final int MAX_ASIENTOS_POR_RESERVA = 10;
 
     private final Funcion_AsientoRepository funcion_AsientoRepository;
     private final AsientoRepository asientoRepository;
@@ -40,6 +41,12 @@ public class Funcion_AsientoService {
         return ESTADO_RESERVADO.equals(fa.getEstado())
                 && fa.getReservado_hasta() != null
                 && fa.getReservado_hasta().isBefore(LocalDateTime.now());
+    }
+
+    // Siempre se bloquean los asientos en el mismo orden (de menor a mayor id)
+    // para que dos usuarios con asientos en común no se bloqueen entre sí (deadlock).
+    private List<Long> ordenarSinRepetidos(List<Long> ids) {
+        return ids.stream().distinct().sorted().toList();
     }
 
     public List<Funcion_Asiento> obtenerMapaFuncion_Asientos(Long funcion_id){
@@ -101,33 +108,48 @@ public class Funcion_AsientoService {
         return funcion_AsientoRepository.saveAll(nuevos);
     }
 
+    @Transactional
     public boolean reservarAsientos(String usuario_id, Long funcion_id, List<Long> asientosIds){
+        if (asientosIds == null || asientosIds.isEmpty()) {
+            return false;
+        }
+
+        if (ordenarSinRepetidos(asientosIds).size() > MAX_ASIENTOS_POR_RESERVA) {
+            return false;
+        }
+
         LocalDateTime expiracion = LocalDateTime.now().plusMinutes(5);
+        List<Funcion_Asiento> aReservar = new ArrayList<>();
 
-        for (Long asiento_id : asientosIds){
-            Optional<Funcion_Asiento> optFuncionAsiento = funcion_AsientoRepository.findByFuncion_idAndAsiento_id(funcion_id, asiento_id);
+        // Paso 1: bloquear y validar TODOS los asientos antes de modificar alguno
+        for (Long asiento_id : ordenarSinRepetidos(asientosIds)) {
+            Optional<Funcion_Asiento> optFuncionAsiento =
+                    funcion_AsientoRepository.findByFuncion_idAndAsiento_idForUpdate(funcion_id, asiento_id);
 
-            if(optFuncionAsiento.isPresent()){
-                Funcion_Asiento funcion_Asiento = optFuncionAsiento.get();
-
-                if (estaExpirado(funcion_Asiento)) {
-                    funcion_Asiento.setEstado(ESTADO_DISPONIBLE);
-                }
-
-                if (ESTADO_DISPONIBLE.equals(funcion_Asiento.getEstado())){
-                    funcion_Asiento.setEstado(ESTADO_RESERVADO);
-                    funcion_Asiento.setUsuario_id(usuario_id);
-                    funcion_Asiento.setReservado_hasta(expiracion);
-                    funcion_Asiento.setActualizado_en(LocalDateTime.now());
-
-                    funcion_AsientoRepository.save(funcion_Asiento);
-                }else{
-                    return false;
-                }
-            }else {
+            if (optFuncionAsiento.isEmpty()) {
                 return false;
             }
+
+            Funcion_Asiento funcion_Asiento = optFuncionAsiento.get();
+            boolean libre = ESTADO_DISPONIBLE.equals(funcion_Asiento.getEstado())
+                    || estaExpirado(funcion_Asiento);
+
+            if (!libre) {
+                return false;
+            }
+
+            aReservar.add(funcion_Asiento);
         }
+
+        // Paso 2: recién ahora se reserva todo junto
+        for (Funcion_Asiento funcion_Asiento : aReservar) {
+            funcion_Asiento.setEstado(ESTADO_RESERVADO);
+            funcion_Asiento.setUsuario_id(usuario_id);
+            funcion_Asiento.setReservado_hasta(expiracion);
+            funcion_Asiento.setActualizado_en(LocalDateTime.now());
+        }
+        funcion_AsientoRepository.saveAll(aReservar);
+
         return true;
     }
 
@@ -135,7 +157,7 @@ public class Funcion_AsientoService {
     public String confirmarAsientos(String usuario_id, Long funcion_id, List<Long> asientosIds){
         List<Funcion_Asiento> aConfirmar = new ArrayList<>();
 
-        for (Long asiento_id : asientosIds) {
+        for (Long asiento_id : ordenarSinRepetidos(asientosIds)) {
             Optional<Funcion_Asiento> optFuncionAsiento =
                     funcion_AsientoRepository.findByFuncion_idAndAsiento_idForUpdate(funcion_id, asiento_id);
 
@@ -168,6 +190,46 @@ public class Funcion_AsientoService {
             funcion_Asiento.setActualizado_en(LocalDateTime.now());
         }
         funcion_AsientoRepository.saveAll(aConfirmar);
+
+        return "OK";
+    }
+
+    @Transactional
+    public String liberarAsientos(String usuario_id, Long funcion_id, List<Long> asientosIds){
+        if (asientosIds == null || asientosIds.isEmpty()) {
+            return "SOLICITUD_INVALIDA";
+        }
+
+        List<Funcion_Asiento> aLiberar = new ArrayList<>();
+
+        for (Long asiento_id : ordenarSinRepetidos(asientosIds)) {
+            Optional<Funcion_Asiento> optFuncionAsiento =
+                    funcion_AsientoRepository.findByFuncion_idAndAsiento_idForUpdate(funcion_id, asiento_id);
+
+            if (optFuncionAsiento.isEmpty()) {
+                return "ASIENTO_INEXISTENTE";
+            }
+
+            Funcion_Asiento funcion_Asiento = optFuncionAsiento.get();
+
+            if (!ESTADO_RESERVADO.equals(funcion_Asiento.getEstado())) {
+                return "ASIENTO_NO_RESERVADO";
+            }
+
+            if (!estaExpirado(funcion_Asiento) && !usuario_id.equals(funcion_Asiento.getUsuario_id())) {
+                return "RESERVA_DE_OTRO_USUARIO";
+            }
+
+            aLiberar.add(funcion_Asiento);
+        }
+
+        for (Funcion_Asiento funcion_Asiento : aLiberar) {
+            funcion_Asiento.setEstado(ESTADO_DISPONIBLE);
+            funcion_Asiento.setUsuario_id(null);
+            funcion_Asiento.setReservado_hasta(null);
+            funcion_Asiento.setActualizado_en(LocalDateTime.now());
+        }
+        funcion_AsientoRepository.saveAll(aLiberar);
 
         return "OK";
     }

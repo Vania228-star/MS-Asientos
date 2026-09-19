@@ -28,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/asientos")
 @RequiredArgsConstructor
 public class AsientoController {
-    
+
     private final AsientoService asientoService;
     private final SalaService salaService;
     private final Funcion_AsientoService funcion_AsientoService;
@@ -49,16 +49,6 @@ public class AsientoController {
         return ResponseEntity.ok(mapa);
     }
 
-    @GetMapping("/reserva/{reservaId}")
-    public ResponseEntity<String> consultarReserva(@PathVariable Long reservaId){
-        return ResponseEntity.ok("Estado de la reserva...");
-    }
-
-    @DeleteMapping("/reserva/{reservaId}")
-    public ResponseEntity<Void> liberarReserva(@PathVariable Long reservaId){
-        return ResponseEntity.noContent().build();
-    }
-
     @PostMapping("/reserva")
     public ResponseEntity<String> reservaAsientos(
             @RequestBody ReservaRequestDto request,
@@ -75,6 +65,28 @@ public class AsientoController {
         }else{
             return ResponseEntity.badRequest().body("No pudo completarse esta reserva. Algunos asientos ya no se encuentran disponibles");
         }
+    }
+
+    @DeleteMapping("/reserva")
+    public ResponseEntity<String> liberarReserva(
+            @RequestBody ReservaRequestDto request,
+            @AuthenticationPrincipal Jwt jwt){
+        String usuarioId = jwt.getSubject();
+
+        String resultado = funcion_AsientoService.liberarAsientos(
+            usuarioId,
+            request.getFuncionId(),
+            request.getAsientosSolicitados()
+        );
+
+        return switch (resultado) {
+            case "OK" -> ResponseEntity.noContent().build();
+            case "SOLICITUD_INVALIDA" -> ResponseEntity.badRequest().body("Debes indicar la función y al menos un asiento");
+            case "ASIENTO_INEXISTENTE" -> ResponseEntity.status(404).body("Uno o más asientos no existen para esta función");
+            case "ASIENTO_NO_RESERVADO" -> ResponseEntity.status(409).body("Uno o más asientos no están reservados");
+            case "RESERVA_DE_OTRO_USUARIO" -> ResponseEntity.status(403).body("La reserva pertenece a otro usuario");
+            default -> ResponseEntity.internalServerError().body("Error desconocido");
+        };
     }
 
     @PutMapping("/confirmar")
