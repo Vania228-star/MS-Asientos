@@ -43,6 +43,10 @@ public class Funcion_AsientoService {
                 && fa.getReservado_hasta().isBefore(LocalDateTime.now());
     }
 
+    private boolean esReservaPropia(Funcion_Asiento fa, String usuario_id) {
+        return ESTADO_RESERVADO.equals(fa.getEstado()) && usuario_id.equals(fa.getUsuario_id());
+    }
+
     // Siempre se bloquean los asientos en el mismo orden (de menor a mayor id)
     // para que dos usuarios con asientos en común no se bloqueen entre sí (deadlock).
     private List<Long> ordenarSinRepetidos(List<Long> ids) {
@@ -134,7 +138,7 @@ public class Funcion_AsientoService {
             boolean libre = ESTADO_DISPONIBLE.equals(funcion_Asiento.getEstado())
                     || estaExpirado(funcion_Asiento);
 
-            if (!libre) {
+            if (!libre && !esReservaPropia(funcion_Asiento, usuario_id)) {
                 return false;
             }
 
