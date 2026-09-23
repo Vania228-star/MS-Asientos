@@ -1,4 +1,4 @@
-version: ' 3.8'
+version: '3.8'
 
 services:
   ms-asientos:
@@ -7,11 +7,13 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-2bd6720e-duocuc-7153.c.aivencloud.com:28226/db_asientos?sslMode=REQUIRED
-      - SPRING_DATASOURCE_PASSWORD=aqui_pon_tu_password_local
+      - SPRING_DATASOURCE_URL=${DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - COGNITO_ISSUER_URI=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_WlflzEy7K
     networks:
       - red-cine
+
 networks:
   red-cine:
     driver: bridge
