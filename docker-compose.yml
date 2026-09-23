@@ -10,7 +10,7 @@ services:
       - SPRING_DATASOURCE_URL=${DB_URL}
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - COGNITO_ISSUER_URI=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_WlflzEy7K
+      - COGNITO_ISSUER_URI=${COGNITO_ISSUER_URI}
     networks:
       - red-cine
 
